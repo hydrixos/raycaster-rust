@@ -1,0 +1,10 @@
+[package]
+name = "raycaster"
+version = "0.1.0"
+authors = ["Friedrich Ruynat <friedrich@hydrixos.net>"]
+
+[dependencies.sdl2]
+version = "0.31.0"
+
+[profile.dev]
+opt-level = 3

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <style>
+            body {
+                background: #111;
+                color: white;
+                font-family: sans-serif;
+                margin: 0;
+            }
+
+            .hidden {
+                display: none !important;
+            }
+
+            #container {
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                height: 100vH;
+                width: 100vW;
+            }
+
+            #canvasBox {
+                position: relative;
+            }
+
+            #canvas {
+                max-width: 100vW;
+                max-height: 100vH;
+                box-shadow: 0 0 32px 16px rgba(0, 0, 0, 0.5);
+            }
+
+            #overlay {
+                position: absolute;
+                bottom: 0.5cm;
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                justify-content: space-between;
+                width: 100%;
+                user-select: none;
+                -webkit-user-select: none;
+            }
+
+            #overlay span {
+                font-size: 1cm;
+                cursor: pointer;
+                padding: 0.5cm;
+            }
+
+            #overlay span.pressed {
+                color: #888;
+            }
+
+            #infoInner {
+                grow: 1;
+            }
+
+            #infoOuter {
+                padding-top: 1em;
+            }
+
+            a {
+                color: white;
+                font-weight: normal;
+                text-decoration: none;
+            }
+            
+            a:visited, a:link, a:active {
+                color: white;
+            }
+            
+            a:hover {
+                text-decoration: underline;
+            }
+
+            #placeholder {
+                font-size: 50px;
+                margin: 1em;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="placeholder">
+            <span id="requires-webassembly">This page requires a browser with Webassembly support.</span>
+            <span id="ios-broken" class="hidden">Webassembly support is currently broken on iOS 11.2.x</span></div>
+        <div id="container" class="hidden">
+            <div id="canvasBox">
+                <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()" ontouchstart="event.preventDefault()" ontouchend="event.preventDefault()"></canvas>
+                <div id="overlay" class="hidden">
+                    <div id="buttonBoxLeft">
+                        <span ontouchstart="injectKeyDown(event)" ontouchend="injectKeyUp(event)" data-keycode="37">◀︎</span>
+                        <span ontouchstart="injectKeyDown(event)" ontouchend="injectKeyUp(event)" data-keycode="38">▲</span>                   
+                    </div>
+                    <div id="infoInner">
+                        <a href="https://github.com/hydrixos/raycaster-rust">About…</a>
+                    </div>
+                    <div id="buttonBoxRight">
+                        <span ontouchstart="injectKeyDown(event)" ontouchend="injectKeyUp(event)" data-keycode="40">▼</span> 
+                        <span ontouchstart="injectKeyDown(event)" ontouchend="injectKeyUp(event)" data-keycode="39">▶︎</span>
+                    </div>
+                </div>
+            </div>
+            <div id="infoOuter" class="info">
+                <a href="https://github.com/hydrixos/raycaster-rust">About…</a>
+            </div>
+        </div>
+        <script>
+            var Module;
+            var supportsWebAssembly = (typeof WebAssembly === "object");
+            var brokenOS = (/iPhone OS 11_2_([0-9]+)/.test(navigator.userAgent));
+
+            // Check whether Webassembly is available
+            if (!supportsWebAssembly || brokenOS) {
+                if (brokenOS) {
+                    document.getElementById("requires-webassembly").classList.add("hidden");
+                    document.getElementById("ios-broken").classList.remove("hidden");
+                }
+
+                var container = document.getElementById('container');
+                container.classList.add("hidden");
+            }
+            else {
+                var placeholder = document.getElementById('placeholder');
+                placeholder.classList.add("hidden");
+
+                // This is read and used by `site.js`
+                Module = {
+                    wasmBinaryFile: "/ray/raycaster.wasm",
+                    canvas: (function() {
+                        return document.getElementById('canvas');
+                    })(),
+                    onRuntimeInitialized: function() { 
+                        document.getElementById('container').classList.remove("hidden");
+                    }
+                }
+            }
+
+            function injectKeyDown(event) {
+                event.target.classList.add("pressed");
+                return injectKeyEvent("keydown", event);
+            }
+
+
+            function injectKeyUp(event) {
+                event.target.classList.remove("pressed");
+                return injectKeyEvent("keyup", event);
+            }
+
+            function injectKeyEvent(eventType, event) {
+                event.preventDefault();
+
+                var field = event.target;
+                var keyCode = field.attributes["data-keycode"].value;
+
+                var keyEvent = new KeyboardEvent(eventType, {"keyCode": Number(keyCode), "bubbles": true});
+                document.dispatchEvent(keyEvent);                
+
+                return true;
+            }
+
+            if ('ontouchstart' in document.documentElement) {
+                document.getElementById('overlay').classList.remove("hidden");
+                document.getElementById('infoOuter').classList.add("hidden");
+            }            
+        </script>
+        <script src="raycaster.js"></script>
+    </body>
+</html>
